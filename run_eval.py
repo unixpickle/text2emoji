@@ -21,8 +21,8 @@ def main():
     print('Loading embeddings...')
     embeddings = Embeddings(args.embeddings)
     print('Creating model...')
-    embeddings = tf.placeholder(tf.float32, shape=embeddings.zero_vector().shape)
-    reconstructions = generate_images(tf.expand_dims(embeddings, axis=0))
+    inputs = tf.placeholder(tf.float32, shape=embeddings.zero_vector().shape)
+    reconstructions = generate_images(tf.expand_dims(inputs, axis=0))
     clipped = tf.cast((tf.clip_by_value(reconstructions, -1.0, 1.0) + 1) * 127.5, tf.uint8)
 
     saver = tf.train.Saver()
@@ -35,10 +35,10 @@ def main():
             phrase = input('Enter phrase: ')
             embedded = embeddings.embed_phrase(phrase)
             print('Producing image...')
-            image = sess.run(reconstructions, feed_dict=embedded)
+            image = sess.run(clipped, feed_dict={inputs: embedded})
             print('Saving image to %s...', args.output)
             img = Image.fromarray(image, 'RGBA')
-            img.save(out_file)
+            img.save(args.output)
 
 
 def arg_parser():
