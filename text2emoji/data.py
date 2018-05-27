@@ -5,6 +5,7 @@ Loading the emoji dataset.
 import json
 import os
 
+import numpy as np
 import tensorflow as tf
 
 
@@ -16,11 +17,11 @@ def create_dataset(embeddings, data_dir, image_size):
     emojis = _emoji_paths(data_dir)
     all_embeddings = []
     all_paths = []
-    for name, paths in emojis:
+    for name, paths in emojis.items():
         embedding = embeddings.embed_phrase(name)
         all_embeddings.extend([embedding] * len(paths))
         all_paths.extend(paths)
-    dataset = tf.data.Dataset.from_tensor_slices((all_embeddings, all_paths))
+    dataset = tf.data.Dataset.from_tensor_slices((np.array(all_embeddings), all_paths))
 
     def load_image(embedding, path):
         data = tf.read_file(path)
@@ -29,7 +30,7 @@ def create_dataset(embeddings, data_dir, image_size):
         resized = tf.image.resize_images(raw_image, [image_size] * 2)
         return embedding, resized
 
-    return dataset.flat_map(load_image)
+    return dataset.map(load_image)
 
 
 def _emoji_paths(data_dir):
@@ -39,9 +40,9 @@ def _emoji_paths(data_dir):
     """
     res = {}
     with open(os.path.join(data_dir, 'text.json'), 'r') as in_file:
-        data = json.loads(in_file)
-        for codepoints, name in data.items():
-            codepoint_dir = os.path.join(data_dir, codepoints)
-            res[name] = [os.path.join(codepoint_dir, x) for x in os.listdir(codepoint_dir)
-                         if x.endswith('.png')]
+        data = json.load(in_file)
+    for codepoints, name in data.items():
+        codepoint_dir = os.path.join(data_dir, codepoints)
+        res[name] = [os.path.join(codepoint_dir, x) for x in os.listdir(codepoint_dir)
+                     if x.endswith('.png')]
     return res

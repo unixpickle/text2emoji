@@ -10,7 +10,7 @@ def generate_images(embeddings):
     Go from embeddings to images.
     """
     out = tf.layers.dense(embeddings, 256, activation=tf.nn.relu)
-    out = tf.reshape(out, [4, 4, 16])
+    out = tf.reshape(out, [-1, 4, 4, 16])
 
     activation = tf.nn.relu
     out = tf.layers.conv2d(out, 32, 3, activation=activation, padding='same')

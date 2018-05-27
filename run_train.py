@@ -15,14 +15,17 @@ from text2emoji.model import generate_images
 def main():
     args = arg_parser().parse_args()
 
+    print('Loading embeddings...')
     embeddings = Embeddings(args.embeddings)
+    print('Creating dataset...')
     try:
         dataset = create_dataset(embeddings, args.data_dir, args.size)
     finally:
         embeddings.close()
-
     dataset = dataset.shuffle(1000).repeat().batch(args.batch_size)
     embeddings, images = dataset.make_one_shot_iterator().get_next()
+
+    print('Creating model...')
     reconstructions = generate_images(embeddings)
     loss = tf.reduce_mean(tf.abs(reconstructions - images))
     minimize = tf.train.AdamOptimizer(learning_rate=args.lr).minimize(loss)
@@ -57,7 +60,7 @@ def arg_parser():
     parser.add_argument('--batch-size', help='SGD batch size', type=int, default=32)
     parser.add_argument('--checkpoint', help='checkpoint directory', default='checkpoint')
     parser.add_argument('--save-interval', help='iterations per save', type=int, default=100)
-    return parser.parse_args()
+    return parser
 
 
 def checkpoint_name(dir_name):
