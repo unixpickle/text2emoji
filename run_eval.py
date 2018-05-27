@@ -22,7 +22,7 @@ def main():
     print('Creating model...')
     inputs = tf.placeholder(tf.float32, shape=embeddings.zero_vector().shape)
     inputs = tf.expand_dims(inputs, axis=0)
-    platform = tf.constant(0, dtype=tf.uint32)
+    platform = tf.constant(0, dtype=tf.int32)
     platform = tf.expand_dims(tf.one_hot(platform, len(PLATFORMS)), axis=0)
     outputs = generate_images(inputs, platform)
     outputs = tf.cast((tf.clip_by_value(outputs, -1.0, 1.0) + 1) * 127.5, tf.uint8)
