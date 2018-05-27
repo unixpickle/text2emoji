@@ -20,10 +20,10 @@ def main():
     print('Loading embeddings...')
     embeddings = Embeddings(args.embeddings)
     print('Creating model...')
-    inputs = tf.placeholder(tf.float32, shape=embeddings.zero_vector().shape)
-    inputs = tf.expand_dims(inputs, axis=0)
-    platform = tf.constant(0, dtype=tf.int32)
-    platform = tf.expand_dims(tf.one_hot(platform, len(PLATFORMS)), axis=0)
+    raw_inputs = tf.placeholder(tf.float32, shape=embeddings.zero_vector().shape)
+    inputs = tf.expand_dims(raw_inputs, axis=0)
+    raw_platform = tf.constant(0, dtype=tf.int32)
+    platform = tf.expand_dims(tf.one_hot(raw_platform, len(PLATFORMS)), axis=0)
     outputs = generate_images(inputs, platform)
     outputs = tf.cast((tf.clip_by_value(outputs, -1.0, 1.0) + 1) * 127.5, tf.uint8)
 
@@ -37,7 +37,7 @@ def main():
             phrase = input('Enter phrase: ')
             embedded = embeddings.embed_phrase(phrase)
             print('Producing image...')
-            image = sess.run(outputs, feed_dict={inputs: embedded})[0]
+            image = sess.run(outputs, feed_dict={raw_inputs: embedded})[0]
             print('Saving image to %s...' % args.output)
             img = Image.fromarray(image, 'RGBA')
             img.save(args.output)
