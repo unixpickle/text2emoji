@@ -3,12 +3,10 @@ Generate samples from a model.
 """
 
 import argparse
-import os
 
 from PIL import Image
 import tensorflow as tf
 
-from text2emoji.data import create_dataset
 from text2emoji.embed import Embeddings
 from text2emoji.model import generate_images
 
