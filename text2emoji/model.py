@@ -7,7 +7,7 @@ import tensorflow as tf
 from .data import PLATFORMS
 
 
-def generate_images(embeddings, platforms):
+def generate_images(embeddings, platforms, training=False):
     """
     Go from embeddings to images.
     """
@@ -19,7 +19,11 @@ def generate_images(embeddings, platforms):
     out = tf.layers.dense(embeddings, 256, activation=tf.nn.relu)
     out = tf.reshape(out, [-1, 4, 4, 16])
 
-    activation = tf.nn.relu
+    def activation(x):
+        out = tf.layers.batch_normalization(x, training=training)
+        out = tf.nn.relu(out)
+        return out
+
     out = tf.layers.conv2d(out, 32, 3, activation=activation, padding='same')
     for depth in [128, 64, 32]:
         out = tf.layers.conv2d(out, depth, 3, activation=activation, padding='same')

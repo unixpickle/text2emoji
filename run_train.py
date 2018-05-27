@@ -26,8 +26,10 @@ def main():
     embeddings, platform, images = dataset.make_one_shot_iterator().get_next()
 
     print('Creating model...')
-    reconstructions = generate_images(embeddings, platform)
-    loss = tf.reduce_mean(tf.abs(reconstructions - images))
+    reconstructions = generate_images(embeddings, platform, training=True)
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    with tf.control_dependencies(update_ops):
+        loss = tf.reduce_mean(tf.abs(reconstructions - images))
     minimize = tf.train.AdamOptimizer(learning_rate=args.lr).minimize(loss)
 
     cur_step = tf.Variable(initial_value=tf.constant(0), name='global_step', trainable=False)
