@@ -22,7 +22,7 @@ def main():
         dataset = create_dataset(embeddings, args.data_dir, args.size)
     finally:
         embeddings.close()
-    dataset = dataset.shuffle(1000).repeat().batch(args.batch_size)
+    dataset = dataset.shuffle(10000).repeat().batch(args.batch_size)
     embeddings, images = dataset.make_one_shot_iterator().get_next()
 
     print('Creating model...')
