@@ -22,6 +22,7 @@ def generate_images(embeddings, platforms):
     activation = tf.nn.relu
     out = tf.layers.conv2d(out, 32, 3, activation=activation, padding='same')
     for depth in [128, 64, 32]:
+        out = tf.layers.conv2d(out, depth, 3, activation=activation, padding='same')
         out = tf.layers.conv2d_transpose(out, depth, 3, strides=2, activation=activation,
                                          padding='same')
     out = tf.layers.conv2d(out, 4, 3, padding='same')
