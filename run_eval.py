@@ -35,8 +35,8 @@ def main():
             phrase = input('Enter phrase: ')
             embedded = embeddings.embed_phrase(phrase)
             print('Producing image...')
-            image = sess.run(clipped, feed_dict={inputs: embedded})
-            print('Saving image to %s...', args.output)
+            image = sess.run(clipped, feed_dict={inputs: embedded})[0]
+            print('Saving image to %s...' % args.output)
             img = Image.fromarray(image, 'RGBA')
             img.save(args.output)
 
