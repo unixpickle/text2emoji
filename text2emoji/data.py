@@ -28,7 +28,8 @@ def create_dataset(embeddings, data_dir, image_size):
         raw_image = tf.image.decode_png(data, channels=4)
         raw_image.set_shape([None, None, 4])
         resized = tf.image.resize_images(raw_image, [image_size] * 2)
-        return embedding, resized
+        floats = tf.cast(resized, tf.float32) / 127.5 - 1
+        return embedding, floats
 
     return dataset.map(load_image)
 

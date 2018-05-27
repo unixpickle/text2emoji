@@ -1,15 +1,18 @@
 """
-Train a model.
+Generate samples from a model.
 """
 
 import argparse
 import os
 
+from PIL import Image
 import tensorflow as tf
 
 from text2emoji.data import create_dataset
 from text2emoji.embed import Embeddings
 from text2emoji.model import generate_images
+
+from run_train import checkpoint_name
 
 
 def main():
@@ -17,54 +20,35 @@ def main():
 
     print('Loading embeddings...')
     embeddings = Embeddings(args.embeddings)
-    print('Creating dataset...')
-    try:
-        dataset = create_dataset(embeddings, args.data_dir, args.size)
-    finally:
-        embeddings.close()
-    dataset = dataset.shuffle(1000).repeat().batch(args.batch_size)
-    embeddings, images = dataset.make_one_shot_iterator().get_next()
-
     print('Creating model...')
-    reconstructions = generate_images(embeddings)
-    loss = tf.reduce_mean(tf.abs(reconstructions - images))
-    minimize = tf.train.AdamOptimizer(learning_rate=args.lr).minimize(loss)
-
-    cur_step = tf.Variable(initial_value=tf.constant(0), name='global_step', trainable=False)
-    inc_step = tf.assign_add(cur_step, tf.constant(1))
+    embeddings = tf.placeholder(tf.float32, shape=embeddings.zero_vector().shape)
+    reconstructions = generate_images(tf.expand_dims(embeddings, axis=0))
+    clipped = tf.cast((tf.clip_by_value(reconstructions, -1.0, 1.0) + 1) * 127.5, tf.uint8)
 
     saver = tf.train.Saver()
     with tf.Session() as sess:
         print('Initializing variables...')
         sess.run(tf.global_variables_initializer())
-        if os.path.exists(args.checkpoint):
-            print('Restoring from checkpoint...')
-            saver.restore(sess, checkpoint_name(args.checkpoint))
-        print('Training...')
+        print('Restoring from checkpoint...')
+        saver.restore(sess, checkpoint_name(args.checkpoint))
         while True:
-            cur_loss, cur_step, _ = sess.run([loss, inc_step, minimize])
-            print('step %d: loss=%f' % (cur_step, cur_loss))
-            if cur_step % args.save_interval == 0:
-                if not os.path.exists(args.checkpoint):
-                    os.mkdir(args.checkpoint)
-                saver.save(sess, checkpoint_name(args.checkpoint))
+            phrase = input('Enter phrase: ')
+            embedded = embeddings.embed_phrase(phrase)
+            print('Producing image...')
+            image = sess.run(reconstructions, feed_dict=embedded)
+            print('Saving image to %s...', args.output)
+            img = Image.fromarray(image, 'RGBA')
+            img.save(out_file)
 
 
 def arg_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--embeddings', help='path to Glove embeddings',
                         default='glove.42B.300d.txt')
-    parser.add_argument('--data-dir', help='path to emoji data', default='emoji_data')
     parser.add_argument('--size', help='image size', type=int, default=32)
-    parser.add_argument('--lr', help='training step size', type=float, default=1e-3)
-    parser.add_argument('--batch-size', help='SGD batch size', type=int, default=32)
     parser.add_argument('--checkpoint', help='checkpoint directory', default='checkpoint')
-    parser.add_argument('--save-interval', help='iterations per save', type=int, default=100)
+    parser.add_argument('--output', help='output image name', default='output.png')
     return parser
-
-
-def checkpoint_name(dir_name):
-    return os.path.join(dir_name, 'model.ckpt')
 
 
 if __name__ == '__main__':
