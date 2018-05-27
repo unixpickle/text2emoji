@@ -23,10 +23,10 @@ def main():
     finally:
         embeddings.close()
     dataset = dataset.shuffle(10000).repeat().batch(args.batch_size)
-    embeddings, images = dataset.make_one_shot_iterator().get_next()
+    embeddings, platform, images = dataset.make_one_shot_iterator().get_next()
 
     print('Creating model...')
-    reconstructions = generate_images(embeddings)
+    reconstructions = generate_images(embeddings, platform)
     loss = tf.reduce_mean(tf.abs(reconstructions - images))
     minimize = tf.train.AdamOptimizer(learning_rate=args.lr).minimize(loss)
 

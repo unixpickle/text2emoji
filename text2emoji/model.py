@@ -4,11 +4,18 @@ A generative model for emoji characters.
 
 import tensorflow as tf
 
+from .data import PLATFORMS
 
-def generate_images(embeddings):
+
+def generate_images(embeddings, platforms):
     """
     Go from embeddings to images.
     """
+    plat_embed = tf.get_variable('platform_embed',
+                                 initializer=tf.truncated_normal_initializer(),
+                                 shape=[len(PLATFORMS), embeddings.get_shape()[-1].value])
+    embeddings = embeddings + tf.matmul(platforms, plat_embed)
+
     out = tf.layers.dense(embeddings, 256, activation=tf.nn.relu)
     out = tf.reshape(out, [-1, 4, 4, 16])
 
