@@ -5,6 +5,7 @@ Generate samples from a model.
 import argparse
 
 from PIL import Image
+import numpy as np
 import tensorflow as tf
 
 from text2emoji.data import PLATFORMS
@@ -21,10 +22,9 @@ def main():
     embeddings = Embeddings(args.embeddings)
     print('Creating model...')
     raw_inputs = tf.placeholder(tf.float32, shape=embeddings.zero_vector().shape)
-    inputs = tf.expand_dims(raw_inputs, axis=0)
-    raw_platform = tf.constant(0, dtype=tf.int32)
-    platform = tf.expand_dims(tf.one_hot(raw_platform, len(PLATFORMS)), axis=0)
-    outputs = generate_images(inputs, platform)
+    inputs = tf.tile(tf.expand_dims(raw_inputs, axis=0), [len(PLATFORMS), 1])
+    platforms = tf.one_hot(list(range(len(PLATFORMS))), len(PLATFORMS))
+    outputs = generate_images(inputs, platforms)
     outputs = tf.cast((tf.clip_by_value(outputs, -1.0, 1.0) + 1) * 127.5, tf.uint8)
 
     saver = tf.train.Saver()
@@ -37,10 +37,17 @@ def main():
             phrase = input('Enter phrase: ')
             embedded = embeddings.embed_phrase(phrase)
             print('Producing image...')
-            image = sess.run(outputs, feed_dict={raw_inputs: embedded})[0]
+            images = sess.run(outputs, feed_dict={raw_inputs: embedded})
             print('Saving image to %s...' % args.output)
-            img = Image.fromarray(image, 'RGBA')
+            img = Image.fromarray(image_row(images), 'RGBA')
             img.save(args.output)
+
+
+def image_row(images):
+    """
+    Convert a batch of images into a horizontal list.
+    """
+    return np.concatenate([x for x in images], axis=1)
 
 
 def arg_parser():
